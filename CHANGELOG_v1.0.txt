@@ -1,0 +1,11 @@
+峻爸 KTV 多文字軌核對器 v1.0
+
+- 完全獨立於峻爸 AI Transcriber，不修改原程式任何檔案。
+- 音訊播放 + 上方完整全文 KTV 同步反白。
+- 下方時間軸可顯示目前軌與比較軌。
+- 支援 SRT/VTT/TXT/JSON/CSV/DOCX/HTML。
+- 無時間碼文字可依基準時間軸或音訊長度做估算對齊，並清楚標示估算。
+- 可儲存 .jktv 專案、匯出 SRT/VTT。
+- 可產生離線 HTML KTV 網頁包，供瀏覽器使用。
+- GitHub Actions 同時建 Portable 與 Single EXE。
+- 預留 Authenticode PFX Secrets，自動簽署可降低 Windows/瀏覽器誤判。

@@ -1,0 +1,18 @@
+峻爸 KTV 多文字軌核對器 v1.0｜驗證報告
+
+本地驗證：
+- Python compileall：PASS
+- 單元測試：8 passed
+- SRT/VTT/TXT/JSON 解析：PASS
+- 無時間碼文字對齊：PASS
+- HTML + VTT 離線輸出：PASS
+- 中文檔名/繁體中文輸出：PASS
+
+未在目前 Linux 容器直接執行的項目：
+- PySide6 Windows GUI 實機播放
+- PyInstaller Windows Portable / Single EXE
+這兩項交由 GitHub Actions windows-2022 建置與驗證。
+
+設計隔離：
+- 本專案不引用、修改或覆蓋 Junba AI Transcriber 原專案檔案。
+- 本專案不含 Whisper/Gemini 語音辨識引擎。

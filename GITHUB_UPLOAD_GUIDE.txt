@@ -1,0 +1,18 @@
+GitHub 封裝步驟
+
+1. 建立「全新」Repository，例如：Junba-KTV-MultiTrack-Reviewer。
+2. 本 ZIP 解壓後，請把 ZIP 裡的「內容」直接放到 Repository 根目錄。
+3. 根目錄應直接看到：
+   main.py
+   requirements.txt
+   app/
+   packaging/
+   .github/
+4. Workflow 必須位於：
+   .github/workflows/build-windows-v1.0.yml
+5. Commit 後到 Actions → Build Junba KTV MultiTrack v1.0 → Run workflow。
+6. 成功後會得到：
+   Junba-KTV-MultiTrack-v1.0-Portable-Windows-x64
+   Junba-KTV-MultiTrack-v1.0-Single-EXE-Windows-x64
+
+注意：這是獨立專案，不要覆蓋原來的 Junba AI Transcriber Repository。

@@ -1,0 +1,21 @@
+峻爸 KTV 多文字軌核對器 v1.0a Hotfix 驗證報告
+
+問題定位
+- GitHub Actions validate：成功
+- Portable build：失敗
+- Single EXE build：失敗
+- 共通原因：PyInstaller spec 以 packaging/ 為基準尋找 main.py，導致尋找 packaging/main.py。
+
+修正
+- portable.spec：使用 SPECPATH 推導 Repository 根目錄，再以絕對路徑指向 main.py。
+- single.spec：同上。
+- version_info.txt 改用 Repository 根目錄推導的絕對路徑。
+- workflow validate 新增入口檔與 spec 存在檢查。
+
+本地驗證
+- python -m compileall：通過
+- pytest：8 passed
+- spec 路徑斷言：通過
+
+注意
+- Windows EXE 實際封裝仍需由 GitHub Actions Windows runner 驗證。

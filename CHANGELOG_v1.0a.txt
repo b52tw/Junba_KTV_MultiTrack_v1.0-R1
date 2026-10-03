@@ -1,0 +1,9 @@
+峻爸 KTV 多文字軌核對器 v1.0a Hotfix
+
+修正：
+- 修正 GitHub Actions 的 PyInstaller .spec 入口路徑。
+- portable.spec / single.spec 現在會從 Repository 根目錄尋找 main.py。
+- 修正 version_info.txt 的絕對路徑。
+- validate 階段新增 main.py 與兩個 spec 檔存在檢查。
+
+本次只修封裝，不變更 KTV 核對功能。

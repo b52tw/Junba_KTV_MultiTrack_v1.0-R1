@@ -1,0 +1,4 @@
+這是一個獨立專案。
+請建立新的 GitHub Repository，例如：Junba-KTV-MultiTrack-Reviewer。
+不要覆蓋或上傳到原本 Junba AI Transcriber 的 Repository。
+本專案不包含 Whisper/Gemini 語音辨識核心，只負責錄音與既有逐字稿/翻譯稿的同步核對、學習與字幕輸出。

@@ -1,0 +1,132 @@
+name: Build Junba KTV MultiTrack v1.0
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+  attestations: write
+  id-token: write
+
+jobs:
+  validate:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          architecture: 'x64'
+          cache: 'pip'
+      - name: Install
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest pyinstaller
+      - name: Validate source
+        shell: pwsh
+        run: |
+          python -m compileall -q main.py app tests
+          python -m pytest -q
+          if (!(Test-Path 'main.py')) { throw 'Repository root main.py missing' }
+          if (!(Test-Path 'packaging/portable.spec')) { throw 'portable.spec missing' }
+          if (!(Test-Path 'packaging/single.spec')) { throw 'single.spec missing' }
+
+  portable:
+    needs: validate
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          architecture: 'x64'
+          cache: 'pip'
+      - name: Install
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+      - name: Build portable
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm packaging/portable.spec
+          if (!(Test-Path 'dist/Junba_KTV_MultiTrack_v1.0_Portable/Junba_KTV_MultiTrack_v1.0.exe')) { throw 'Portable EXE missing' }
+      - name: Optional Authenticode signing (portable EXE)
+        shell: pwsh
+        env:
+          CERT_B64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+          CERT_PASS: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:CERT_B64)) { Write-Host 'No signing certificate configured; continue unsigned.'; exit 0 }
+          [IO.File]::WriteAllBytes('cert.pfx',[Convert]::FromBase64String($env:CERT_B64))
+          $signtool = (Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter signtool.exe | Where-Object {$_.FullName -match 'x64'} | Sort-Object FullName -Descending | Select-Object -First 1).FullName
+          & $signtool sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /f cert.pfx /p $env:CERT_PASS 'dist/Junba_KTV_MultiTrack_v1.0_Portable/Junba_KTV_MultiTrack_v1.0.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'Portable EXE signing failed' }
+          Remove-Item cert.pfx -Force
+      - name: Hash and zip portable
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release | Out-Null
+          Compress-Archive -Path 'dist/Junba_KTV_MultiTrack_v1.0_Portable/*' -DestinationPath 'release/Junba-KTV-MultiTrack-v1.0-Portable-Windows-x64.zip' -CompressionLevel Optimal
+          Get-FileHash 'release/Junba-KTV-MultiTrack-v1.0-Portable-Windows-x64.zip' -Algorithm SHA256 | Format-List | Out-File 'release/Junba-KTV-MultiTrack-v1.0-Portable-Windows-x64.sha256.txt'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Junba-KTV-MultiTrack-v1.0-Portable-Windows-x64
+          path: release/*Portable*
+          if-no-files-found: error
+          compression-level: 0
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: release/Junba-KTV-MultiTrack-v1.0-Portable-Windows-x64.zip
+
+  single:
+    needs: validate
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          architecture: 'x64'
+          cache: 'pip'
+      - name: Install
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+      - name: Build single EXE
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm packaging/single.spec
+          if (!(Test-Path 'dist/Junba_KTV_MultiTrack_v1.0.exe')) { throw 'Single EXE missing' }
+      - name: Optional Authenticode signing (single EXE)
+        shell: pwsh
+        env:
+          CERT_B64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+          CERT_PASS: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:CERT_B64)) { Write-Host 'No signing certificate configured; continue unsigned.'; exit 0 }
+          [IO.File]::WriteAllBytes('cert.pfx',[Convert]::FromBase64String($env:CERT_B64))
+          $signtool = (Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter signtool.exe | Where-Object {$_.FullName -match 'x64'} | Sort-Object FullName -Descending | Select-Object -First 1).FullName
+          & $signtool sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /f cert.pfx /p $env:CERT_PASS 'dist/Junba_KTV_MultiTrack_v1.0.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'Single EXE signing failed' }
+          Remove-Item cert.pfx -Force
+      - name: Hash and package single
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release | Out-Null
+          Copy-Item 'dist/Junba_KTV_MultiTrack_v1.0.exe' 'release/Junba_KTV_MultiTrack_v1.0.exe'
+          Get-FileHash 'release/Junba_KTV_MultiTrack_v1.0.exe' -Algorithm SHA256 | Format-List | Out-File 'release/Junba_KTV_MultiTrack_v1.0.sha256.txt'
+          Compress-Archive -Path 'release/Junba_KTV_MultiTrack_v1.0.exe','release/Junba_KTV_MultiTrack_v1.0.sha256.txt' -DestinationPath 'release/Junba-KTV-MultiTrack-v1.0-Single-EXE-Windows-x64.zip' -CompressionLevel Optimal
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Junba-KTV-MultiTrack-v1.0-Single-EXE-Windows-x64
+          path: release/Junba-KTV-MultiTrack-v1.0-Single-EXE-Windows-x64.zip
+          if-no-files-found: error
+          compression-level: 0
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: release/Junba-KTV-MultiTrack-v1.0-Single-EXE-Windows-x64.zip
